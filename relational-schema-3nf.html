@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DonorBridge — Relational schema (third normal form)</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #121a33;
+        --text: #e8ecf7;
+        --muted: #9ca8c9;
+        --accent: #60a5fa;
+        --ok: #34d399;
+        --border: #1f2a4e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.55;
+      }
+
+      .header {
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel);
+        position: sticky;
+        top: 0;
+        z-index: 2;
+      }
+
+      .header h1 {
+        margin: 0 0 6px;
+        font-size: 22px;
+        font-weight: 700;
+      }
+
+      .header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        max-width: 72ch;
+      }
+
+      main {
+        max-width: 1050px;
+        margin: 0 auto;
+        padding: 24px 22px 48px;
+      }
+
+      h2 {
+        margin: 32px 0 12px;
+        font-size: 18px;
+        color: var(--accent);
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+      }
+
+      h3 {
+        margin: 22px 0 10px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      p,
+      li {
+        color: var(--text);
+        font-size: 14px;
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      code {
+        font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+        font-size: 12.5px;
+        background: #1a2750;
+        padding: 1px 6px;
+        border-radius: 4px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin: 12px 0;
+        background: var(--panel);
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+
+      th {
+        background: #1a2344;
+        font-weight: 600;
+        color: var(--accent);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      .pk {
+        color: var(--ok);
+        font-weight: 600;
+      }
+
+      ul {
+        margin: 8px 0;
+        padding-left: 22px;
+      }
+
+      .callout {
+        border-left: 3px solid var(--accent);
+        padding: 12px 14px;
+        margin: 16px 0;
+        background: var(--panel);
+        border-radius: 0 8px 8px 0;
+        font-size: 14px;
+      }
+
+      nav.toc {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 28px;
+      }
+
+      nav.toc ol {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      nav.toc a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      nav.toc a:hover {
+        text-decoration: underline;
+      }
+
+      dl {
+        margin: 10px 0;
+        font-size: 14px;
+      }
+
+      dt {
+        font-weight: 600;
+        margin-top: 10px;
+        color: #a5b4fc;
+      }
+
+      dd {
+        margin: 4px 0 0;
+        color: var(--muted);
+      }
+
+      .diagram-strip {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin: 16px 0;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+      }
+
+      .diagram-strip pre.mermaid {
+        margin: 0;
+      }
+
+      figure.viz {
+        margin: 20px 0;
+      }
+
+      figure.viz figcaption {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 10px;
+        max-width: 65ch;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <h1>Relational database schema (third normal form)</h1>
+      <p>
+        Logical schemas derived from the DonorBridge ERD by mapping entities and relationships, then normalizing to
+        <strong>third normal form (3NF)</strong>: each table has atomic columns, no partial dependencies on composite
+        keys, and no transitive dependence of non-key attributes on the primary key through other non-key attributes.
+      </p>
+    </header>
+
+    <main>
+      <nav class="toc" aria-label="Table of contents">
+        <strong>Contents</strong>
+        <ol>
+          <li><a href="#map">Entity–relationship → relational mapping</a></li>
+          <li><a href="#norm">Normalization process</a></li>
+          <li><a href="#viz">Visual summary — normal forms</a></li>
+          <li><a href="#final">Final relations in 3NF</a></li>
+          <li><a href="#integrity">Referential integrity</a></li>
+          <li><a href="#constraints">Constraints</a></li>
+        </ol>
+      </nav>
+
+      <section id="map">
+        <h2>1. Entity–relationship → relational mapping</h2>
+        <p>
+          Each strong entity becomes a relation with the same attributes. Weak or optional
+          subtypes are expressed with foreign keys to the supertype primary key.
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ER construct</th>
+              <th>Relational realization</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>HOSPITAL</code></td>
+              <td>Relation <code>Hospital(hospital_id, …)</code> — PK <code>hospital_id</code></td>
+            </tr>
+            <tr>
+              <td><code>PATIENT</code></td>
+              <td>
+                <code>Patient(patient_id, hospital_id, …)</code> — PK <code>patient_id</code>, FK
+                <code>hospital_id → Hospital</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>MEDICAL_RECORD</code></td>
+              <td>
+                <code>MedicalRecord(record_id, patient_id, …)</code> — PK <code>record_id</code>, FK
+                <code>patient_id → Patient</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>DONOR</code></td>
+              <td><code>Donor(donor_id, hospital_id, …)</code></td>
+            </tr>
+            <tr>
+              <td><code>REQUEST</code> (+ subtypes)</td>
+              <td>
+                Supertype <code>Request(request_id, patient_id, hospital_id, request_type, …)</code>; 1:1 extensions
+                <code>BloodRequestDetails(request_id, …)</code>,
+                <code>OrganRequestDetails(request_id, …)</code> with PK/FK <code>request_id → Request</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>BLOOD_DONATION</code>, <code>BLOOD_UNIT</code></td>
+              <td>
+                <code>BloodDonation(blood_donation_id, donor_id, …)</code>;
+                <code>BloodUnit(blood_unit_id, blood_donation_id, …)</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>BLOOD_INVENTORY</code></td>
+              <td>
+                One row per hospital and blood group for location/audit facts only; unit quantities are computed from
+                <code>BloodUnit</code> (see normalization).
+              </td>
+            </tr>
+            <tr>
+              <td><code>ORGAN_OFFER</code></td>
+              <td><code>OrganOffer(organ_offer_id, donor_id, …)</code></td>
+            </tr>
+            <tr>
+              <td><code>MATCH_CANDIDATE</code>, <code>TRANSPLANT</code></td>
+              <td>
+                Association entity as <code>MatchCandidate(match_id, request_id, …)</code>; optional FKs for unit vs.
+                offer; <code>Transplant(transplant_id, match_id, …)</code>
+              </td>
+            </tr>
+            <tr>
+              <td>Chat / NL query path</td>
+              <td>
+                <code>ChatSession</code>, <code>ChatMessage</code>, <code>IntentDetection</code>,
+                <code>SqlTemplate</code>, <code>QueryExecutionLog</code>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="norm">
+        <h2>2. Normalization process</h2>
+
+        <h3>2.1 Unnormalized / initial logical grouping</h3>
+        <p>
+          Conceptually group repeating or composite values out of narratives: donations contain many
+          units, requests may reference both blood-type needs and organ needs, chats contain many messages.
+          The ERD already separates these into entity sets instead of burying repeating groups inside
+          <code>PATIENT</code> or <code>REQUEST</code>, which would violate 1NF.
+        </p>
+
+        <div class="callout">
+          <strong>1NF:</strong> Every relation has atomic column values (no repeating groups inside a
+          cell). Separate relations <code>BloodDonation</code>, <code>BloodUnit</code>,
+          <code>ChatMessage</code>, etc., satisfy atomicity by construction.
+        </div>
+
+        <h3>2.2 Functional dependencies</h3>
+        <dl>
+          <dt>Hospital</dt>
+          <dd><code>hospital_id → name, location, contact</code> — single determinant (PK).</dd>
+          <dt>Patient, Donor, Medical records</dt>
+          <dd>Natural identifiers <code>{patient_id}</code>, <code>{donor_id}</code>, <code>{record_id}</code> determine all non-key attributes.</dd>
+          <dt>Request subtree</dt>
+          <dd>
+            <code>request_id</code> determines core request facts; subtype tables extend the same PK with mutually
+            exclusive extension rows keyed by request type policy (enforce in application or with CHECK /
+            assertions).
+          </dd>
+          <dt>Blood unit</dt>
+          <dd>
+            <code>blood_unit_id → blood_donation_id, blood_group, volume_ml, expiry_date, unit_status</code>. No subset
+            of a composite PK is involved (simple PK ⇒ automatically 2NF).
+          </dd>
+          <dt>Blood inventory (critical)</dt>
+          <dd>
+            A column such as “available_units_summary” is not functionally determined only by
+            <code>(hospital_id, blood_group)</code> in a stable way if it is refreshed from other facts; it is a
+            <em>derived aggregate</em>. Storing it alongside <code>hospital_id, blood_group</code> creates update
+            anomalies relative to <code>BloodUnit</code>.
+          </dd>
+        </dl>
+
+        <div class="callout">
+          <strong>2NF:</strong> All relations use either a single-attribute PK or, where a composite PK exists, every
+          non-key attribute depends on the <em>whole</em> key. All listed relations with simple PKs are 2NF. Subtype
+          tables <code>BloodRequestDetails</code> and <code>OrganRequestDetails</code> use full
+          <code>request_id</code> as PK — no partial dependencies.
+        </div>
+
+        <div class="callout">
+          <strong>3NF:</strong> No non-key attribute may depend transitively on the primary key through another non-key
+          attribute. Relative to the raw ERD, three concrete rules keep the logical model in 3NF:
+          <ul>
+            <li>
+              <strong>Blood inventory:</strong> Do not store derived counts (for example
+              <code>available_units_summary</code>) on the inventory row. Compute counts from <code>BloodUnit</code> in a
+              view or in application logic. The base table stores only facts about the hospital-and-group slot (for
+              example identifiers and <code>last_updated</code>).
+            </li>
+            <li>
+              <strong>Intent and SQL template:</strong> Store <code>intent_code</code> only on <code>SqlTemplate</code>.
+              <code>IntentDetection</code> refers to the template with <code>template_id</code>; do not repeat
+              <code>intent_code</code> on detection rows.
+            </li>
+            <li>
+              <strong>Query execution log:</strong> Reference the detection with <code>intent_id</code> only. Template
+              text and <code>intent_code</code> are reached by joining <code>IntentDetection</code> to
+              <code>SqlTemplate</code>; storing <code>template_id</code> again on the log would repeat a fact already
+              determined by <code>intent_id</code>.
+            </li>
+          </ul>
+        </div>
+
+        <p class="muted">
+          The relation list in the next section is written to satisfy these rules. Each table is in <strong>third normal
+          form (3NF)</strong>.
+        </p>
+      </section>
+
+      <section id="viz" aria-labelledby="viz-heading">
+        <h2 id="viz-heading">3. Visual summary — normal forms</h2>
+        <p>
+          Text (definitions, functional dependencies, and tables) remains how you argue a design is in 3NF. This diagram
+          only summarizes how the three normal-form steps build on each other.
+        </p>
+
+        <h3>3.1 Pipeline: 1NF → 2NF → 3NF</h3>
+        <figure class="viz">
+          <div class="diagram-strip">
+            <pre class="mermaid">
+flowchart LR
+  subgraph n1 [1NF]
+    a["Atomic columns\nno repeating groups"]
+  end
+  subgraph n2 [2NF]
+    b["Every non-key attribute\ndepends on the whole key"]
+  end
+  subgraph n3 [3NF]
+    c["No non-key attribute depends\non another non-key attribute"]
+  end
+  n1 --> n2 --> n3
+            </pre>
+          </div>
+          <figcaption>
+            Each stage adds a constraint. DonorBridge tables are decomposed so each step is satisfied (for example
+            separate tables instead of multivalued groups inside one row).
+          </figcaption>
+        </figure>
+      </section>
+
+      <section id="final">
+        <h2>4. Final relations in 3NF</h2>
+        <p class="muted">
+          Notation: <span class="pk">PK</span> = primary key, <strong>FK</strong> = foreign key. Types are logical; map
+          to your DBMS.
+        </p>
+
+        <h3>Hospital, people, and records</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Relation</th>
+              <th>Attributes / keys</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Hospital</code></td>
+              <td>
+                <span class="pk">hospital_id</span>, name, location, contact
+              </td>
+            </tr>
+            <tr>
+              <td><code>Patient</code></td>
+              <td>
+                <span class="pk">patient_id</span>, <strong>FK</strong> hospital_id, full_name, age, gender, blood_group,
+                contact_info, risk_score, created_at
+              </td>
+            </tr>
+            <tr>
+              <td><code>MedicalRecord</code></td>
+              <td>
+                <span class="pk">record_id</span>, <strong>FK</strong> patient_id, diagnosis, severity_level, stage,
+                hemoglobin_level, updated_at
+              </td>
+            </tr>
+            <tr>
+              <td><code>Donor</code></td>
+              <td>
+                <span class="pk">donor_id</span>, <strong>FK</strong> hospital_id, full_name, age, blood_group, donor_type,
+                contact_info, availability_status, eligibility_status, last_donation_date
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Requests (supertype + 1:1 subtypes)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Relation</th>
+              <th>Attributes / keys</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Request</code></td>
+              <td>
+                <span class="pk">request_id</span>, <strong>FK</strong> patient_id, <strong>FK</strong> hospital_id,
+                request_type, urgency_level, status, request_date
+              </td>
+            </tr>
+            <tr>
+              <td><code>BloodRequestDetails</code></td>
+              <td>
+                <span class="pk">request_id</span> <strong>FK→Request</strong>, blood_group_required, units_required,
+                required_by
+              </td>
+            </tr>
+            <tr>
+              <td><code>OrganRequestDetails</code></td>
+              <td>
+                <span class="pk">request_id</span> <strong>FK→Request</strong>, organ_type_required, max_wait_time_days,
+                hla_notes
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Blood donation chain and inventory</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Relation</th>
+              <th>Attributes / keys</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>BloodDonation</code></td>
+              <td>
+                <span class="pk">blood_donation_id</span>, <strong>FK</strong> donor_id, donation_date, quantity_donated_ml,
+                outcome
+              </td>
+            </tr>
+            <tr>
+              <td><code>BloodUnit</code></td>
+              <td>
+                <span class="pk">blood_unit_id</span>, <strong>FK</strong> blood_donation_id, blood_group, volume_ml,
+                expiry_date, unit_status
+              </td>
+            </tr>
+            <tr>
+              <td><code>BloodInventoryLocation</code></td>
+              <td>
+                <span class="pk">inventory_id</span>, <strong>FK</strong> hospital_id, blood_group, last_updated —
+                at most one row per <code>(hospital_id, blood_group)</code> (<code>UNIQUE(hospital_id, blood_group)</code>);
+                unit counts are not stored here (3NF).
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="muted">
+          Derived reporting (not stored on <code>BloodInventoryLocation</code>): for example a view
+          <code>V_AvailableUnitsPerGroup(hospital_id, blood_group, available_count)</code> over
+          <code>BloodUnit</code> using your hospital-assignment rules.
+        </p>
+
+        <h3>Organ offer, matching, transplant</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Relation</th>
+              <th>Attributes / keys</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>OrganOffer</code></td>
+              <td>
+                <span class="pk">organ_offer_id</span>, <strong>FK</strong> donor_id, organ_type, availability_status,
+                retrieval_date, medical_clearance
+              </td>
+            </tr>
+            <tr>
+              <td><code>MatchCandidate</code></td>
+              <td>
+                <span class="pk">match_id</span>, <strong>FK</strong> request_id, match_type, <strong>FK</strong>
+                blood_unit_id (nullable), <strong>FK</strong> organ_offer_id (nullable), compatibility_score,
+                priority_level, match_status, match_date — enforce XOR or CHECK so row matches declared
+                <code>match_type</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>Transplant</code></td>
+              <td>
+                <span class="pk">transplant_id</span>, <strong>FK</strong> match_id, transplant_date, surgeon_name,
+                outcome
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Chat, intent, and safe query execution</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Relation</th>
+              <th>Attributes / keys</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>ChatSession</code></td>
+              <td>
+                <span class="pk">chat_session_id</span>, <strong>FK</strong> hospital_id, user_role, started_at
+              </td>
+            </tr>
+            <tr>
+              <td><code>ChatMessage</code></td>
+              <td>
+                <span class="pk">message_id</span>, <strong>FK</strong> chat_session_id, sender_type, message_text,
+                created_at
+              </td>
+            </tr>
+            <tr>
+              <td><code>SqlTemplate</code></td>
+              <td>
+                <span class="pk">template_id</span>, intent_code <em>(UNIQUE)</em>, sql_text, allowed_params, active_flag
+              </td>
+            </tr>
+            <tr>
+              <td><code>IntentDetection</code></td>
+              <td>
+                <span class="pk">intent_id</span>, <strong>FK</strong> message_id, <strong>FK</strong> template_id,
+                confidence_score, detected_at — <code>intent_code</code> is not duplicated here; it comes from
+                <code>SqlTemplate</code> via join on <code>template_id</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>QueryExecutionLog</code></td>
+              <td>
+                <span class="pk">execution_id</span>, <strong>FK</strong> intent_id, param_json, execution_status,
+                rows_returned, executed_at; nullable contextual <strong>FK</strong>s:
+                request_id → <code>Request</code>, match_id → <code>MatchCandidate</code>, inventory_id →
+                <code>BloodInventoryLocation</code> — no separate <code>template_id</code> column (join through
+                <code>IntentDetection</code> for template and intent code)
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="integrity">
+        <h2>5. Referential integrity summary</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Child relation</th>
+              <th>Foreign key → parent</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Patient</code></td>
+              <td>hospital_id → <code>Hospital</code></td>
+            </tr>
+            <tr>
+              <td><code>MedicalRecord</code></td>
+              <td>patient_id → <code>Patient</code></td>
+            </tr>
+            <tr>
+              <td><code>Donor</code></td>
+              <td>hospital_id → <code>Hospital</code></td>
+            </tr>
+            <tr>
+              <td><code>Request</code></td>
+              <td>patient_id → <code>Patient</code>, hospital_id → <code>Hospital</code></td>
+            </tr>
+            <tr>
+              <td><code>BloodRequestDetails</code>, <code>OrganRequestDetails</code></td>
+              <td>request_id → <code>Request</code></td>
+            </tr>
+            <tr>
+              <td><code>BloodDonation</code></td>
+              <td>donor_id → <code>Donor</code></td>
+            </tr>
+            <tr>
+              <td><code>BloodUnit</code></td>
+              <td>blood_donation_id → <code>BloodDonation</code></td>
+            </tr>
+            <tr>
+              <td><code>BloodInventoryLocation</code></td>
+              <td>hospital_id → <code>Hospital</code></td>
+            </tr>
+            <tr>
+              <td><code>OrganOffer</code></td>
+              <td>donor_id → <code>Donor</code></td>
+            </tr>
+            <tr>
+              <td><code>MatchCandidate</code></td>
+              <td>request_id → <code>Request</code>; blood_unit_id → <code>BloodUnit</code>; organ_offer_id → <code>OrganOffer</code></td>
+            </tr>
+            <tr>
+              <td><code>Transplant</code></td>
+              <td>match_id → <code>MatchCandidate</code></td>
+            </tr>
+            <tr>
+              <td><code>ChatSession</code></td>
+              <td>hospital_id → <code>Hospital</code></td>
+            </tr>
+            <tr>
+              <td><code>ChatMessage</code></td>
+              <td>chat_session_id → <code>ChatSession</code></td>
+            </tr>
+            <tr>
+              <td><code>IntentDetection</code></td>
+              <td>message_id → <code>ChatMessage</code>, template_id → <code>SqlTemplate</code></td>
+            </tr>
+            <tr>
+              <td><code>QueryExecutionLog</code></td>
+              <td>
+                intent_id → <code>IntentDetection</code>; optional request_id → <code>Request</code>; optional match_id →
+                <code>MatchCandidate</code>; optional inventory_id → <code>BloodInventoryLocation</code>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="constraints">
+        <h2>6. Constraints</h2>
+        <p>
+          Below are integrity and consistency rules expressed as database-style constraints where possible. Anything
+          left to application logic should still be enforced in one place only.
+        </p>
+
+        <h3>6.1 Key and uniqueness</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Scope</th>
+              <th>Constraint</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>All tables</td>
+              <td>Every table has exactly one declared <strong>primary key</strong> as listed in §4.</td>
+            </tr>
+            <tr>
+              <td><code>SqlTemplate</code></td>
+              <td><code>UNIQUE (intent_code)</code> — one active template catalog row per intent code when combined with business rules.</td>
+            </tr>
+            <tr>
+              <td><code>BloodInventoryLocation</code></td>
+              <td><code>UNIQUE (hospital_id, blood_group)</code> — at most one inventory row per hospital and ABO grouping.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>6.2 Referential constraints</h3>
+        <p>
+          All relationships in §5 use <strong>foreign keys</strong> with semantics appropriate to optional links (nullable
+          when the ERD allows zero or one). Use <strong>ON DELETE RESTRICT</strong> (or <strong>NO ACTION</strong>) for
+          parent deletes unless a controlled cascade is intentional (for example cascading message deletes inside a chat
+          session).
+        </p>
+
+        <h3>6.3 Request supertype and subtypes</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Rule</th>
+              <th>Enforcement idea</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Subtype consistency</td>
+              <td>
+                If <code>Request.request_type</code> is <code>BLOOD</code>, a matching row exists in
+                <code>BloodRequestDetails</code> and none in <code>OrganRequestDetails</code>; if <code>ORGAN</code>, the reverse.
+                <code>CHECK</code>, trigger, or single transaction in application layer.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>6.4 Match candidates (blood versus organ)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Rule</th>
+              <th>Enforcement idea</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Keyed resource matches <code>match_type</code></td>
+              <td>
+                If <code>match_type</code> is a blood match: <code>blood_unit_id IS NOT NULL</code> and
+                <code>organ_offer_id IS NULL</code>. If organ match: <code>organ_offer_id IS NOT NULL</code> and
+                <code>blood_unit_id IS NULL</code>. Express with <code>CHECK</code> or assert in a stored procedure.
+              </td>
+            </tr>
+            <tr>
+              <td>Score and status</td>
+              <td>
+                <code>CHECK (compatibility_score BETWEEN 0 AND 1)</code> if scores are normalized; otherwise use your
+                domain range. Restrict <code>match_status</code> to a fixed code set via <code>CHECK</code> or lookup table.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>6.5 Domains and non-negativity</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Relation / column</th>
+              <th>Constraint</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Patient.age</code>, <code>Donor.age</code></td>
+              <td><code>CHECK (age &gt;= 0 AND age &lt;= 150)</code> (or link to date of birth only).</td>
+            </tr>
+            <tr>
+              <td><code>BloodDonation.quantity_donated_ml</code></td>
+              <td><code>CHECK (quantity_donated_ml &gt;= 0)</code></td>
+            </tr>
+            <tr>
+              <td><code>BloodUnit.volume_ml</code></td>
+              <td><code>CHECK (volume_ml &gt;= 0)</code></td>
+            </tr>
+            <tr>
+              <td><code>BloodRequestDetails.units_required</code>, <code>Request.urgency_level</code></td>
+              <td><code>CHECK (units_required &gt; 0)</code>; urgency in allowed range or enum.</td>
+            </tr>
+            <tr>
+              <td><code>IntentDetection.confidence_score</code></td>
+              <td><code>CHECK (confidence_score BETWEEN 0 AND 1)</code>.</td>
+            </tr>
+            <tr>
+              <td><code>QueryExecutionLog.rows_returned</code></td>
+              <td><code>CHECK (rows_returned &gt;= 0)</code>.</td>
+            </tr>
+            <tr>
+              <td>Dates</td>
+              <td><code>BloodUnit.expiry_date</code> not before donation date when both are known; optional <code>CHECK</code> or trigger.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>6.6 Query execution log</h3>
+        <p>
+          Optional foreign keys to <code>Request</code>, <code>MatchCandidate</code>, and
+          <code>BloodInventoryLocation</code> should reflect the actual context of the executed safe query: at most one
+          primary business object per log row, or document a JSON convention in <code>param_json</code> if multiple
+          references are required.
+        </p>
+
+        <p class="muted">
+          This document pairs with the ERD in <code>erd-viewer.html</code>. All relations in §4 are stated in third
+          normal form (3NF). Naming uses PascalCase for readability; map to <code>snake_case</code> in SQL if
+          preferred.
+        </p>
+      </section>
+    </main>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "neutral",
+        securityLevel: "loose",
+        flowchart: { htmlLabels: true, curve: "basis" }
+      });
+    </script>
+  </body>
+</html>

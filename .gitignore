@@ -1,0 +1,24 @@
+# Secrets — never commit real credentials
+.env
+**/.env
+!.env.example
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+.eggs/
+
+# Local databases & dumps (use schema.sql + seed.sql instead)
+*.db
+*.backup
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
