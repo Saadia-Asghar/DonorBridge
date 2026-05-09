@@ -1,4 +1,4 @@
-# DonorBridge — Final Project Documentation
+# DonorBridge 
 
 **Course deliverable compilation:** relational database design, normalization rationale, transactional and reporting queries, application layer, reproducibility, and submission checklist.
 
@@ -155,28 +155,17 @@ Read-only parameterized FastAPI endpoints for dashboards or tooling; **`uvicorn 
 
 ---
 
-## 9. Deliverables checklist (finalize submission)
+## 9. Deliverables checklist:
 
-Submit or attach per instructor requirements:
+- **DDL:** `database/schema.sql`
+- **Data:** `database/seed.sql`
+- **Views + query doc:** `database/queries_reports.sql`
+- **Chat audit seed:** `database/chatbot_sql_template_seed.sql`
+- **Normalization / design narrative:** **`relational-schema-3nf.html`**, **`erd-viewer.html`**
+- **This compilation:** **`PROJECT_DOCUMENTATION.md`** (+ root **`README.md`**)
+- **UI:** **`prototype/`** Streamlit
 
-- [ ] **DDL:** `database/schema.sql`
-- [ ] **Data:** `database/seed.sql`
-- [ ] **Views + query doc:** `database/queries_reports.sql`
-- [ ] **Chat audit seed:** `database/chatbot_sql_template_seed.sql`
-- [ ] **Normalization / design narrative:** **`relational-schema-3nf.html`**, **`erd-viewer.html`**
-- [ ] **This compilation:** **`PROJECT_DOCUMENTATION.md`** (+ root **`README.md`**)
-- [ ] **UI:** **`prototype/`** Streamlit (+ optional **`Chatbot/`**)
-- [ ] **Source control:** Tag or release ZIP matching GitHub **`main`**; confirm **`.env` absent** from archive
 
-Optional extras: **`integration/`**, recorded demo video link, **`Chatbot/smoke_test.py`** output screenshot.
-
----
-
-## 10. Repository reference
-
-**Public repository:** https://github.com/shajiaalianwar55/DonorBridge  
-
-**Suggested citation line (reports / slide decks):**
 
 > DonorBridge — PostgreSQL healthcare resource coordination prototype with 3NF schema, analytic views, Streamlit prototype, and optional chatbot-assisted reporting (repository link above).
 
